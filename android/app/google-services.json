@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "27720152247",
+    "project_id": "kiroku-90518",
+    "storage_bucket": "kiroku-90518.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:27720152247:android:de8bef5f45a418dbc98932",
+        "android_client_info": {
+          "package_name": "com.example.kiroku"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "27720152247-m95p7mdiboqv8jlf1stfjt2lmene6u4h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv7Qagsss6EBHZN_0eQeJye5no6h6P3JE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "27720152247-m95p7mdiboqv8jlf1stfjt2lmene6u4h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
