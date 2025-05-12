@@ -37,7 +37,7 @@ class AuthStateHandler extends StatelessWidget {
           return const NavigationBarApp();
         } else {
           return const AuthPage();
-        };
+        }
       },
     );
   }
