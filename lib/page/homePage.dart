@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'navBar.dart';
 
 /// Page d'authentification - Bascule entre la page de connexion et la page de création de compte
 class HomePage extends StatefulWidget {
@@ -10,17 +9,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool wantConnect = true;
-
-  /// Getter pour le texte du bouton
-  String get buttonText => wantConnect ? "Créer un compte" : "Se connecter";
-
-  /// Méthode pour basculer entre les deux pages
-  void _switchPage() {
-    setState(() {
-      wantConnect = !wantConnect;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,18 +18,11 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
       ),
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton(
-              onPressed: _switchPage,
-              child: Text(buttonText),
+            child: Text(
+              'Home page',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: const NavigationBarApp(),
+          ),
     );
   }
 }

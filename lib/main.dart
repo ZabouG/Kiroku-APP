@@ -3,7 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'auth/auth.dart';
-import 'page/homePage.dart';
+import 'page/navBar.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,10 +34,10 @@ class AuthStateHandler extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
-          return const HomePage();
+          return const NavigationBarApp();
         } else {
           return const AuthPage();
-        }; 
+        };
       },
     );
   }
