@@ -14,7 +14,7 @@ class _ProfilPageState extends State<ProfilPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kiroku'),
+        title: const Text('Kiroku - Profil Page'),
         centerTitle: true,
       ),
       body: Center(

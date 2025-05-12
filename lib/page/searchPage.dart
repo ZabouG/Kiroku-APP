@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../fonction/apiRequest.dart';
+import 'avisPage.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -47,7 +48,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kiroku'),
+        title: const Text('Kiroku - Recherche'),
         centerTitle: true,
       ),
       body: Padding(
@@ -82,7 +83,12 @@ class _SearchPageState extends State<SearchPage> {
                         : const SizedBox(width: 50, height: 50),
                     title: Text(manga['title'] ?? 'Titre indisponible'),
                     subtitle: Text('ID : ${manga['mal_id']}'),
-                    
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => AvisPage(manga)),
+                      );
+                    },
                   );
                 },
               ),
