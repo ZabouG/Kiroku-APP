@@ -201,6 +201,19 @@ class _ProfilPageState extends State<ProfilPage> {
               child: _isLoading ? const CircularProgressIndicator() : const Text('Supprimer le compte'),
             ),
 
+            const SizedBox(height: 16.0),
+
+            // Bouton De déconnexion
+            ElevatedButton(
+              onPressed: _isLoading ? null : () async {
+                setState(() => _isLoading = true);
+                await _auth.signOut();
+                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: _isLoading ? const CircularProgressIndicator() : const Text('Déconnexion'),
+            ),
+
             if (_errorMessage.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 16.0),
