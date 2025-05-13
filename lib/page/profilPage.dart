@@ -14,8 +14,10 @@ class ProfilPage extends StatefulWidget {
 class _ProfilPageState extends State<ProfilPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   final TextEditingController _pseudoController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
   String _errorMessage = '';
   bool _isLoading = false;
 
@@ -35,32 +37,63 @@ class _ProfilPageState extends State<ProfilPage> {
 
       setState(() {
         _pseudoController.text = snapshot['pseudo'] ?? "Invité";
-        _emailController.text = user.email ?? "Email non disponible";
       });
     }
   }
 
-  /// Met à jour le pseudo
-  Future<void> _updatePseudo() async {
-    String pseudo = _pseudoController.text.trim();
+  /// Vérifie le mot de passe
+  Future<bool> _verifyPassword(String password) async {
     User? user = _auth.currentUser;
+    String email = user?.email ?? "";
 
-    if (pseudo.isEmpty) {
+    try {
+      AuthCredential credential = EmailAuthProvider.credential(email: email, password: password);
+      await user?.reauthenticateWithCredential(credential);
+      return true;
+    } catch (e) {
       setState(() {
-        _errorMessage = "Le pseudo ne peut pas être vide";
+        _errorMessage = "Mot de passe incorrect.";
+      });
+      return false;
+    }
+  }
+
+  /// Met à jour le pseudo
+  Future<void> _updateProfile() async {
+    String pseudo = _pseudoController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (password.isEmpty) {
+      setState(() {
+        _errorMessage = "Veuillez saisir votre mot de passe pour valider.";
       });
       return;
     }
 
     setState(() => _isLoading = true);
 
+    bool isAuthenticated = await _verifyPassword(password);
+
+    if (!isAuthenticated) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
     try {
+      User? user = _auth.currentUser;
+
       if (user != null) {
         String userId = user.uid;
-        String response = await updatePseudo(userId, pseudo);
-        setState(() {
-          _errorMessage = response;
-        });
+
+        if (pseudo.isNotEmpty) {
+          await _firestore.collection("users").doc(userId).update({
+            "pseudo": pseudo,
+          });
+
+          setState(() {
+            _errorMessage = "Pseudo mis à jour avec succès.";
+          });
+        }
       }
     } catch (e) {
       setState(() {
@@ -71,79 +104,45 @@ class _ProfilPageState extends State<ProfilPage> {
     }
   }
 
-  /// Met à jour l'email
-  Future<void> _updateEmail() async {
-    String email = _emailController.text.trim();
-    User? user = _auth.currentUser;
+  /// Supprime le compte utilisateur
+  Future<void> _deleteAccount() async {
+    String password = _passwordController.text.trim();
 
-    if (email.isEmpty) {
+    if (password.isEmpty) {
       setState(() {
-        _errorMessage = "L'email ne peut pas être vide";
+        _errorMessage = "Veuillez saisir votre mot de passe pour continuer.";
       });
       return;
     }
 
     setState(() => _isLoading = true);
 
-    try {
-      if (user != null) {
-        await user.sendEmailVerification();
-        await user.updateEmail(email);
-        await _firestore.collection('users').doc(user.uid).update({"email": email});
-        setState(() {
-          _errorMessage = "Email mis à jour avec succès !";
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = "Erreur lors de la mise à jour de l'email : $e";
-      });
-    } finally {
+    bool isAuthenticated = await _verifyPassword(password);
+
+    if (!isAuthenticated) {
       setState(() => _isLoading = false);
+      return;
     }
-  }
-
-  /// Supprime le compte et tous ses avis
-  Future<void> _deleteAccount() async {
-    User? user = _auth.currentUser;
-
-    if (user == null) return;
-
-    setState(() => _isLoading = true);
 
     try {
-      String userId = user.uid;
+      User? user = _auth.currentUser;
 
-      // Supprime tous les avis de l'utilisateur
-      QuerySnapshot avisSnapshot = await _firestore.collection('avis').get();
-      for (var doc in avisSnapshot.docs) {
-        String mangaId = doc.id;
-        QuerySnapshot ratingsSnapshot = await _firestore
-            .collection('avis')
-            .doc(mangaId)
-            .collection('ratings')
-            .where('userId', isEqualTo: userId)
-            .get();
+      if (user != null) {
+        String userId = user.uid;
 
-        for (var ratingDoc in ratingsSnapshot.docs) {
-          await ratingDoc.reference.delete();
-        }
+        // Mettre à jour le pseudo en "Utilisateur supprimé"
+        await _firestore.collection('users').doc(userId).update({
+          "pseudo": "Utilisateur supprimé",
+        });
+
+        // Supprimer l'utilisateur de Firebase Auth
+        await user.delete();
+
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
-
-      // Supprime le document utilisateur
-      await _firestore.collection('users').doc(userId).delete();
-
-      // Supprime le compte
-      await user.delete();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Compte supprimé avec succès')),
-      );
-
-      Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       setState(() {
-        _errorMessage = "Erreur lors de la suppression : $e";
+        _errorMessage = "Erreur lors de la suppression du compte : $e";
       });
     } finally {
       setState(() => _isLoading = false);
@@ -162,44 +161,27 @@ class _ProfilPageState extends State<ProfilPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 16.0),
             TextField(
               controller: _pseudoController,
-              decoration: const InputDecoration(
-                labelText: 'Pseudo',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Pseudo'),
             ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _updatePseudo,
-              child: _isLoading ? const CircularProgressIndicator() : const Text('Modifier le pseudo'),
-            ),
-
             const SizedBox(height: 16.0),
             TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Mot de passe'),
             ),
+            const SizedBox(height: 24.0),
+
+            // Bouton Valider
+            ElevatedButton(
+              onPressed: _isLoading ? null : _updateProfile,
+              child: _isLoading ? const CircularProgressIndicator() : const Text('Valider'),
+            ),
+
             const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _updateEmail,
-              child: _isLoading ? const CircularProgressIndicator() : const Text('Modifier l\'email'),
-            ),
 
-            const SizedBox(height: 24.0),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: _isLoading ? null : _deleteAccount,
-              child: _isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Supprimer le compte'),
-            ),
-
-            const SizedBox(height: 24.0),
+            // Bouton Voir avis
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -208,6 +190,15 @@ class _ProfilPageState extends State<ProfilPage> {
                 );
               },
               child: const Text('Voir mes avis'),
+            ),
+
+            const SizedBox(height: 16.0),
+
+            // Bouton Supprimer le compte
+            ElevatedButton(
+              onPressed: _isLoading ? null : _deleteAccount,
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: _isLoading ? const CircularProgressIndicator() : const Text('Supprimer le compte'),
             ),
 
             if (_errorMessage.isNotEmpty)
